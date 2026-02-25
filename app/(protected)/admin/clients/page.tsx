@@ -20,10 +20,10 @@ export default async function AdminClientsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">
+        <h1 className="text-xl font-semibold text-zinc-900">
           Administración de clientes
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-0.5 text-sm text-zinc-500">
           Crea y gestiona los clientes del repositorio.
         </p>
       </div>
@@ -43,13 +43,13 @@ export default async function AdminClientsPage() {
               id="name"
               name="name"
               required
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
               placeholder="Ej. Grupo Andino"
             />
           </div>
           <button
             type="submit"
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700"
+            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-95"
           >
             Crear cliente
           </button>
@@ -66,7 +66,7 @@ export default async function AdminClientsPage() {
           </div>
         ) : (
           <div className="divide-y divide-zinc-100">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
               <span>Nombre</span>
               <span className="text-center">Docs</span>
               <span className="text-center">Usuarios</span>
@@ -75,7 +75,7 @@ export default async function AdminClientsPage() {
             {clients.map((client: (typeof clients)[number]) => (
               <div
                 key={client.id}
-                className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-6 py-4"
+                className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-5 py-3.5 transition hover:bg-zinc-50"
               >
                 <div>
                   <p className="text-sm font-semibold text-zinc-900">

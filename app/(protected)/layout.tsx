@@ -1,8 +1,8 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { auth } from "@/lib/auth";
-import UserMenu from "@/app/(protected)/components/UserMenu";
+import { SidebarNav } from "@/app/(protected)/components/SidebarNav";
+import { SignOutButton } from "@/app/(protected)/components/SignOutButton";
 
 export default async function ProtectedLayout({
   children,
@@ -10,62 +10,57 @@ export default async function ProtectedLayout({
   children: ReactNode;
 }) {
   const session = await auth();
+  const name = session?.user?.name ?? session?.user?.email ?? "Usuario";
+  const role = session?.user?.role ?? "USER";
+
+  const initials = name
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-8">
-            <Link
-              href="/clients"
-              className="flex items-center gap-2 text-sm font-bold tracking-tight text-zinc-900"
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-900 text-white text-xs font-bold">
-                RW
-              </span>
-              <span className="hidden sm:inline">Capital Holding</span>
-            </Link>
-            <nav className="flex items-center gap-1 text-sm">
-              {session?.user?.role === "ADMIN" ? (
-                <>
-                  <Link
-                    className="rounded-md px-3 py-1.5 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
-                    href="/clients"
-                  >
-                    Clientes
-                  </Link>
-                  <Link
-                    className="rounded-md px-3 py-1.5 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
-                    href="/admin/clients"
-                  >
-                    Admin
-                  </Link>
-                  <Link
-                    className="rounded-md px-3 py-1.5 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
-                    href="/admin/users"
-                  >
-                    Usuarios
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  className="rounded-md px-3 py-1.5 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
-                  href="/clients"
-                >
-                  Clientes
-                </Link>
-              )}
-            </nav>
+    <div className="flex min-h-screen">
+      {/* ── Sidebar ── */}
+      <aside className="flex w-[220px] shrink-0 flex-col border-r border-white/[0.04] bg-[#0f1117]">
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-5 py-5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-xs font-bold tracking-wide text-white">
+            RW
           </div>
-          {session?.user ? (
-            <UserMenu
-              name={session.user.name ?? session.user.email ?? ""}
-              role={session.user.role}
-            />
-          ) : null}
+          <div>
+            <p className="text-[13px] font-semibold leading-tight text-white">
+              RW Capital
+            </p>
+            <p className="text-[10px] leading-tight text-zinc-500">Holding</p>
+          </div>
         </div>
-      </header>
-      <main className="mx-auto w-full max-w-6xl px-6 py-10">{children}</main>
+
+        {/* Navigation */}
+        <SidebarNav role={role} />
+
+        {/* User footer */}
+        <div className="mt-auto flex items-center gap-3 border-t border-white/[0.06] px-4 py-3.5">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600/20 text-[10px] font-bold uppercase text-indigo-400">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[12px] font-medium leading-tight text-zinc-300">
+              {name.split(" ")[0]}
+            </p>
+            <p className="text-[10px] leading-tight text-zinc-600">
+              {role === "ADMIN" ? "Administrador" : "Usuario"}
+            </p>
+          </div>
+          <SignOutButton />
+        </div>
+      </aside>
+
+      {/* ── Main content ── */}
+      <main className="flex-1 overflow-y-auto bg-[#f4f5f7]">
+        <div className="mx-auto max-w-5xl px-8 py-8">{children}</div>
+      </main>
     </div>
   );
 }

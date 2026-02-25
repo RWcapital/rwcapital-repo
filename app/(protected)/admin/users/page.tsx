@@ -15,8 +15,8 @@ export default async function AdminUsersPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Usuarios</h1>
-        <p className="mt-2 text-sm text-zinc-500">
+        <h1 className="text-xl font-semibold text-zinc-900">Usuarios</h1>
+        <p className="mt-0.5 text-sm text-zinc-500">
           Administra los usuarios con acceso al sistema.
         </p>
       </div>
@@ -26,9 +26,7 @@ export default async function AdminUsersPage() {
         action={createUser}
         className="rounded-2xl border border-zinc-200 bg-white p-6"
       >
-        <h2 className="mb-4 text-base font-semibold text-zinc-900">
-          Crear nuevo usuario
-        </h2>
+        <p className="mb-4 text-sm font-semibold text-zinc-900">Nuevo usuario</p>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="text-sm font-medium text-zinc-700" htmlFor="name">
@@ -37,7 +35,7 @@ export default async function AdminUsersPage() {
             <input
               id="name"
               name="name"
-              className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+              className="mt-1.5 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
               placeholder="Nombre completo"
             />
           </div>
@@ -53,7 +51,7 @@ export default async function AdminUsersPage() {
               name="email"
               type="email"
               required
-              className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+              className="mt-1.5 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
               placeholder="correo@rwcapitalholding.com"
             />
           </div>
@@ -70,7 +68,7 @@ export default async function AdminUsersPage() {
               type="password"
               required
               minLength={8}
-              className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+              className="mt-1.5 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
               placeholder="Mínimo 8 caracteres"
             />
           </div>
@@ -84,7 +82,7 @@ export default async function AdminUsersPage() {
             <select
               id="role"
               name="role"
-              className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+              className="mt-1.5 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
             >
               <option value="STAFF">Staff</option>
               <option value="ADMIN">Administrador</option>
@@ -94,7 +92,7 @@ export default async function AdminUsersPage() {
         <div className="mt-4 flex justify-end">
           <button
             type="submit"
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700"
+            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-95"
           >
             Crear usuario
           </button>

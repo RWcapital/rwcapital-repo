@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import {
@@ -34,6 +35,36 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function FileIcon({ name }: { name: string }) {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  const color =
+    ext === "pdf"
+      ? "text-red-400"
+      : ["doc", "docx"].includes(ext)
+      ? "text-blue-400"
+      : ["xls", "xlsx"].includes(ext)
+      ? "text-emerald-400"
+      : ["jpg", "jpeg", "png", "gif", "webp"].includes(ext)
+      ? "text-amber-400"
+      : "text-zinc-400";
+
+  return (
+    <svg
+      className={`h-4 w-4 shrink-0 ${color}`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.75}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      />
+    </svg>
+  );
+}
+
 export default async function ClientDocumentsPage({
   params,
 }: {
@@ -42,9 +73,7 @@ export default async function ClientDocumentsPage({
   const { clientId } = await params;
   const session = await requireUser();
 
-  if (!clientId) {
-    notFound();
-  }
+  if (!clientId) notFound();
 
   const client = await prisma.client.findUnique({
     where: { id: clientId },
@@ -53,16 +82,12 @@ export default async function ClientDocumentsPage({
         orderBy: [{ folderPath: "asc" }, { createdAt: "desc" }],
       },
       memberships: {
-        include: {
-          user: true,
-        },
+        include: { user: true },
       },
     },
   });
 
-  if (!client) {
-    notFound();
-  }
+  if (!client) notFound();
 
   const hasAccess = await canAccessClient(
     session.user.id,
@@ -70,81 +95,101 @@ export default async function ClientDocumentsPage({
     clientId,
   );
 
-  if (!hasAccess) {
-    redirect("/clients");
-  }
+  if (!hasAccess) redirect("/clients");
 
-  const grouped = (client.documents as ClientDocument[]).reduce<
-    Record<string, ClientDocument[]>
-  >((acc, doc) => {
+  const docs = client.documents as ClientDocument[];
+
+  const grouped = docs.reduce<Record<string, ClientDocument[]>>((acc, doc) => {
     const key = doc.folderPath || "Raíz";
     acc[key] = acc[key] ? [...acc[key], doc] : [doc];
     return acc;
   }, {});
 
+  const existingFolders = Object.keys(grouped).filter((k) => k !== "Raíz");
   const isAdmin = session.user.role === "ADMIN";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-sm">
+        <Link
+          href="/clients"
+          className="text-zinc-500 transition hover:text-zinc-700"
+        >
+          Repositorio
+        </Link>
+        <svg
+          className="h-3.5 w-3.5 text-zinc-300"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        <span className="font-medium text-zinc-700">{client.name}</span>
+      </nav>
+
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-zinc-500">Cliente</p>
-          <h1 className="text-2xl font-semibold text-zinc-900">{client.name}</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {client.documents.length} documento
-            {client.documents.length !== 1 ? "s" : ""}
+          <h1 className="text-xl font-semibold text-zinc-900">{client.name}</h1>
+          <p className="mt-0.5 text-sm text-zinc-500">
+            {docs.length} documento{docs.length !== 1 ? "s" : ""}
+            {existingFolders.length > 0
+              ? ` · ${existingFolders.length} carpeta${existingFolders.length !== 1 ? "s" : ""}`
+              : ""}
           </p>
         </div>
-
-        {/* Upload card */}
-        <UploadCard clientId={clientId} />
+        <UploadCard clientId={clientId} folders={existingFolders} />
       </div>
 
       {/* Members panel (admin only) */}
       {isAdmin ? (
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-zinc-900">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-semibold text-zinc-900">
             Acceso de usuarios
-          </h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Los usuarios con acceso pueden ver y subir documentos de este cliente.
+          </p>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Gestiona quién puede ver y subir documentos de este cliente.
           </p>
           <form
             action={addMember.bind(null, clientId)}
-            className="mt-4 flex flex-col gap-3 sm:flex-row"
+            className="mt-4 flex flex-col gap-2 sm:flex-row"
           >
             <input
               type="email"
               name="email"
               placeholder="correo@rwcapitalholding.com"
-              className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none"
+              className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
               required
             />
             <button
               type="submit"
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:text-zinc-900"
+              className="shrink-0 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700"
             >
-              Dar acceso
+              + Dar acceso
             </button>
           </form>
 
           {(client.memberships as ClientMember[]).length === 0 ? (
-            <p className="mt-4 text-sm text-zinc-500">
+            <p className="mt-3 text-xs text-zinc-400">
               Ningún usuario asignado todavía.
             </p>
           ) : (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {(client.memberships as ClientMember[]).map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 pl-3 pr-1 py-1 text-xs text-zinc-700"
+                  className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 py-1 pl-3 pr-1.5 text-xs text-zinc-700"
                 >
                   <span>{member.user.name ?? member.user.email}</span>
-                  <form action={removeMember.bind(null, clientId, member.userId)}>
+                  <form
+                    action={removeMember.bind(null, clientId, member.userId)}
+                  >
                     <button
                       type="submit"
-                      className="flex h-5 w-5 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
+                      className="flex h-4 w-4 items-center justify-center rounded-full leading-none text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
                       title="Quitar acceso"
                     >
                       ×
@@ -154,63 +199,116 @@ export default async function ClientDocumentsPage({
               ))}
             </div>
           )}
-        </section>
+        </div>
       ) : null}
 
-      {/* Documents */}
-      <section className="space-y-4">
-        {client.documents.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-12 text-center">
-            <p className="text-sm font-medium text-zinc-500">
-              No hay documentos todavía.
-            </p>
-            <p className="mt-1 text-xs text-zinc-400">
-              Usa el formulario de arriba para subir el primer archivo.
-            </p>
+      {/* Document list */}
+      {docs.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-16 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100">
+            <svg
+              className="h-5 w-5 text-zinc-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
           </div>
-        ) : (
-          Object.entries(grouped).map(([folder, docs]) => (
+          <p className="mt-3 text-sm font-medium text-zinc-600">
+            Sin documentos todavía
+          </p>
+          <p className="mt-1 text-xs text-zinc-400">
+            Usa el botón &ldquo;Subir documento&rdquo; para agregar el primero.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {Object.entries(grouped).map(([folder, folderDocs]) => (
             <div
               key={folder}
-              className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
+              className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
             >
-              <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-3">
-                <h3 className="text-sm font-semibold text-zinc-700">{folder}</h3>
-                <span className="text-xs text-zinc-400">
-                  {docs.length} archivo{docs.length !== 1 ? "s" : ""}
+              {/* Folder header */}
+              <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/80 px-5 py-2.5">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="h-3.5 w-3.5 text-zinc-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.75}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                    />
+                  </svg>
+                  <span className="text-xs font-semibold text-zinc-600">
+                    {folder}
+                  </span>
+                </div>
+                <span className="text-[11px] text-zinc-400">
+                  {folderDocs.length} archivo
+                  {folderDocs.length !== 1 ? "s" : ""}
                 </span>
               </div>
+
+              {/* Files */}
               <div className="divide-y divide-zinc-100">
-                {docs.map((doc) => (
+                {folderDocs.map((doc) => (
                   <div
                     key={doc.id}
-                    className="flex items-center justify-between gap-4 px-6 py-3.5"
+                    className="flex items-center justify-between gap-4 px-5 py-3"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-zinc-900">
-                        {doc.originalName}
-                      </p>
-                      <p className="mt-0.5 text-xs text-zinc-400">
-                        {formatBytes(doc.size)} ·{" "}
-                        {new Date(doc.createdAt).toLocaleDateString("es-ES", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <FileIcon name={doc.originalName} />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-zinc-800">
+                          {doc.originalName}
+                        </p>
+                        <p className="text-[11px] text-zinc-400">
+                          {formatBytes(doc.size)} ·{" "}
+                          {new Date(doc.createdAt).toLocaleDateString("es-MX", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-3">
+
+                    <div className="flex shrink-0 items-center gap-2">
                       <a
                         href={`/api/documents/${doc.id}/download`}
-                        className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50"
+                        className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
                       >
+                        <svg
+                          className="h-3 w-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
                         Descargar
                       </a>
                       {isAdmin || doc.uploaderId === session.user.id ? (
                         <form action={deleteDocument.bind(null, doc.id)}>
                           <button
                             type="submit"
-                            className="text-xs font-medium text-red-400 hover:text-red-600"
+                            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-red-50 hover:text-red-500"
                           >
                             Eliminar
                           </button>
@@ -221,9 +319,9 @@ export default async function ClientDocumentsPage({
                 ))}
               </div>
             </div>
-          ))
-        )}
-      </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
