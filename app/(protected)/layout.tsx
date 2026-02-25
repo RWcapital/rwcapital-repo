@@ -26,37 +26,41 @@ export default async function ProtectedLayout({
       {/* ── Sidebar ── */}
       <aside className="flex w-[220px] shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-xs font-bold tracking-wide text-white">
+        <div className="flex items-center gap-2 px-4 py-4">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-xs font-bold tracking-wide text-white">
             RW
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-[13px] font-semibold leading-tight text-zinc-900 dark:text-zinc-50">
               RW Capital
             </p>
             <p className="text-[10px] leading-tight text-zinc-400 dark:text-zinc-500">Holding</p>
           </div>
+          <ThemeToggle />
         </div>
 
-        {/* Navigation */}
-        <SidebarNav role={role} />
+        {/* Cerrar sesión */}
+        <div className="px-3 pb-3">
+          <SignOutButton />
+        </div>
 
-        {/* User footer */}
-        <div className="mt-auto flex items-center gap-2 border-t border-zinc-200 px-4 py-3.5 dark:border-zinc-800">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold uppercase text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
+        {/* Perfil */}
+        <div className="flex items-center gap-2.5 rounded-xl bg-zinc-50 px-3 py-2.5 mx-3 mb-4 dark:bg-zinc-800">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-bold uppercase text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
             {initials}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[12px] font-medium leading-tight text-zinc-800 dark:text-zinc-200">
+          <div className="min-w-0">
+            <p className="truncate text-[12px] font-semibold leading-tight text-zinc-800 dark:text-zinc-200">
               {name.split(" ")[0]}
             </p>
             <p className="text-[10px] leading-tight text-zinc-400 dark:text-zinc-500">
               {role === "ADMIN" ? "Administrador" : "Usuario"}
             </p>
           </div>
-          <ThemeToggle />
-          <SignOutButton />
         </div>
+
+        {/* Navigation */}
+        <SidebarNav role={role} />
       </aside>
 
       {/* ── Main content ── */}
