@@ -41,8 +41,8 @@ export function SidebarNav({ role }: { role: string }) {
       href={href}
       className={`flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all ${
         isActive(href)
-          ? "bg-white/10 text-white"
-          : "text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-300"
+          ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+          : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
       }`}
     >
       <Icon />
@@ -52,11 +52,11 @@ export function SidebarNav({ role }: { role: string }) {
 
   return (
     <nav className="flex-1 space-y-0.5 px-3 py-3">
-      {item("/clients", "Clientes", FoldersIcon)}
+      {item("/clients", "Repositorio", FoldersIcon)}
       {role === "ADMIN" && (
         <>
-          <div className="mx-1 my-2 h-px bg-white/[0.06]" />
-          <p className="px-3 pb-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-zinc-600">
+          <div className="mx-1 my-2 h-px bg-zinc-200 dark:bg-zinc-800" />
+          <p className="px-3 pb-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-600">
             Administración
           </p>
           {item("/admin/clients", "Clientes", BuildingIcon)}

@@ -108,11 +108,11 @@ export function UploadCard({
           />
 
           {/* Panel */}
-          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 dark:bg-zinc-800 dark:ring-white/10">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-700">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                   Subir documento
                 </h2>
                 <p className="mt-0.5 text-xs text-zinc-400">
@@ -134,7 +134,7 @@ export function UploadCard({
               <div>
                 <label
                   htmlFor="folderPath"
-                  className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400"
+                  className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500"
                 >
                   Carpeta de destino
                 </label>
@@ -151,7 +151,7 @@ export function UploadCard({
                     onChange={(e) => setFolder(e.target.value)}
                     list="folder-suggestions"
                     placeholder="ej. 2026 / Contratos"
-                    className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:bg-zinc-700"
                   />
                   <datalist id="folder-suggestions">
                     {folders.map((f) => (
@@ -170,10 +170,10 @@ export function UploadCard({
                   htmlFor="file-input"
                   className={`group relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed py-10 transition ${
                     isDragging
-                      ? "border-indigo-400 bg-indigo-50"
+                      ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
                       : fileName
-                      ? "border-indigo-300 bg-indigo-50/40"
-                      : "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100/50"
+                      ? "border-indigo-300 bg-indigo-50/40 dark:border-indigo-700 dark:bg-indigo-900/10"
+                      : "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100/50 dark:border-zinc-600 dark:bg-zinc-700/40 dark:hover:border-zinc-500 dark:hover:bg-zinc-700/60"
                   }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -194,7 +194,7 @@ export function UploadCard({
                   {fileName ? (
                     <div className="flex flex-col items-center gap-2 px-4 text-center">
                       <CheckCircleIcon />
-                      <p className="break-all text-sm font-medium text-zinc-800">
+                      <p className="break-all text-sm font-medium text-zinc-800 dark:text-zinc-100">
                         {fileName}
                       </p>
                       <p className="text-xs text-zinc-400">
@@ -205,7 +205,7 @@ export function UploadCard({
                     <>
                       <FileCloudIcon />
                       <div className="text-center">
-                        <p className="text-sm font-medium text-zinc-600">
+                        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
                           Arrastra aquí o{" "}
                           <span className="text-indigo-600">
                             selecciona un archivo

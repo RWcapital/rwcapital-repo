@@ -5,8 +5,10 @@ import {
   addMember,
   deleteDocument,
   removeMember,
+  deleteFolder,
 } from "@/app/(protected)/clients/[clientId]/actions";
 import { UploadCard } from "@/app/(protected)/clients/[clientId]/UploadCard";
+import { CreateFolderButton } from "@/app/(protected)/clients/[clientId]/CreateFolderButton";
 import { prisma } from "@/lib/prisma";
 import { requireUser, canAccessClient } from "@/lib/access";
 
@@ -17,6 +19,11 @@ type ClientDocument = {
   folderPath: string | null;
   size: number;
   uploaderId: string;
+};
+
+type ClientFolder = {
+  id: string;
+  name: string;
 };
 
 type ClientMember = {
@@ -84,6 +91,9 @@ export default async function ClientDocumentsPage({
       memberships: {
         include: { user: true },
       },
+      folders: {
+        orderBy: { name: "asc" },
+      },
     },
   });
 
@@ -106,6 +116,9 @@ export default async function ClientDocumentsPage({
   }, {});
 
   const existingFolders = Object.keys(grouped).filter((k) => k !== "Raíz");
+  // Merge DB-defined folders with ones inferred from documents (deduped)
+  const dbFolders = (client.folders as ClientFolder[]).map((f) => f.name);
+  const allFolders = Array.from(new Set([...dbFolders, ...existingFolders])).sort();
   const isAdmin = session.user.role === "ADMIN";
 
   return (
@@ -114,7 +127,7 @@ export default async function ClientDocumentsPage({
       <nav className="flex items-center gap-1.5 text-sm">
         <Link
           href="/clients"
-          className="text-zinc-500 transition hover:text-zinc-700"
+          className="text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
         >
           Repositorio
         </Link>
@@ -127,30 +140,33 @@ export default async function ClientDocumentsPage({
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
-        <span className="font-medium text-zinc-700">{client.name}</span>
+        <span className="font-medium text-zinc-700 dark:text-zinc-200">{client.name}</span>
       </nav>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-900">{client.name}</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">
+          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{client.name}</h1>
+          <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
             {docs.length} documento{docs.length !== 1 ? "s" : ""}
-            {existingFolders.length > 0
-              ? ` · ${existingFolders.length} carpeta${existingFolders.length !== 1 ? "s" : ""}`
+            {allFolders.length > 0
+              ? ` · ${allFolders.length} carpeta${allFolders.length !== 1 ? "s" : ""}`
               : ""}
           </p>
         </div>
-        <UploadCard clientId={clientId} folders={existingFolders} />
+        <div className="flex items-center gap-2">
+          <CreateFolderButton clientId={clientId} />
+          <UploadCard clientId={clientId} folders={allFolders} />
+        </div>
       </div>
 
       {/* Members panel (admin only) */}
       {isAdmin ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-semibold text-zinc-900">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
             Acceso de usuarios
           </p>
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
             Gestiona quién puede ver y subir documentos de este cliente.
           </p>
           <form
@@ -161,12 +177,12 @@ export default async function ClientDocumentsPage({
               type="email"
               name="email"
               placeholder="correo@rwcapitalholding.com"
-              className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:bg-zinc-700"
               required
             />
             <button
               type="submit"
-              className="shrink-0 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700"
+              className="shrink-0 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700 dark:bg-zinc-600 dark:hover:bg-zinc-500"
             >
               + Dar acceso
             </button>
@@ -181,7 +197,7 @@ export default async function ClientDocumentsPage({
               {(client.memberships as ClientMember[]).map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 py-1 pl-3 pr-1.5 text-xs text-zinc-700"
+                  className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 py-1 pl-3 pr-1.5 text-xs text-zinc-700 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200"
                 >
                   <span>{member.user.name ?? member.user.email}</span>
                   <form
@@ -203,9 +219,9 @@ export default async function ClientDocumentsPage({
       ) : null}
 
       {/* Document list */}
-      {docs.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-16 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100">
+      {docs.length === 0 && allFolders.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-16 text-center dark:border-zinc-700 dark:bg-zinc-800/50">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-700">
             <svg
               className="h-5 w-5 text-zinc-400"
               fill="none"
@@ -220,22 +236,65 @@ export default async function ClientDocumentsPage({
               />
             </svg>
           </div>
-          <p className="mt-3 text-sm font-medium text-zinc-600">
+          <p className="mt-3 text-sm font-medium text-zinc-600 dark:text-zinc-300">
             Sin documentos todavía
           </p>
           <p className="mt-1 text-xs text-zinc-400">
-            Usa el botón &ldquo;Subir documento&rdquo; para agregar el primero.
+            Crea una carpeta o sube un documento para comenzar.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
+          {/* Empty DB-defined folders (no documents yet) */}
+          {(client.folders as ClientFolder[])
+            .filter((f) => !grouped[f.name])
+            .map((folder) => (
+              <div
+                key={folder.id}
+                className="overflow-hidden rounded-2xl border border-dashed border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800"
+              >
+                <div className="flex items-center justify-between px-5 py-3">
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="h-3.5 w-3.5 text-zinc-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.75}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                      />
+                    </svg>
+                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                      {folder.name}
+                    </span>
+                    <span className="text-[11px] text-zinc-400">· vacía</span>
+                  </div>
+                  {isAdmin && (
+                    <form action={deleteFolder.bind(null, clientId, folder.name)}>
+                      <button
+                        type="submit"
+                        className="text-[11px] text-zinc-400 transition hover:text-red-500"
+                      >
+                        Eliminar
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            ))}
+
+          {/* Folders with documents */}
           {Object.entries(grouped).map(([folder, folderDocs]) => (
             <div
               key={folder}
-              className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+              className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800"
             >
               {/* Folder header */}
-              <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/80 px-5 py-2.5">
+              <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/80 px-5 py-2.5 dark:border-zinc-700 dark:bg-zinc-700/30">
                 <div className="flex items-center gap-2">
                   <svg
                     className="h-3.5 w-3.5 text-zinc-400"
@@ -250,7 +309,7 @@ export default async function ClientDocumentsPage({
                       d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
                     />
                   </svg>
-                  <span className="text-xs font-semibold text-zinc-600">
+                  <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                     {folder}
                   </span>
                 </div>
@@ -261,7 +320,7 @@ export default async function ClientDocumentsPage({
               </div>
 
               {/* Files */}
-              <div className="divide-y divide-zinc-100">
+              <div className="divide-y divide-zinc-100 dark:divide-zinc-700">
                 {folderDocs.map((doc) => (
                   <div
                     key={doc.id}
@@ -270,10 +329,10 @@ export default async function ClientDocumentsPage({
                     <div className="flex min-w-0 items-center gap-3">
                       <FileIcon name={doc.originalName} />
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-zinc-800">
+                        <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-100">
                           {doc.originalName}
                         </p>
-                        <p className="text-[11px] text-zinc-400">
+                        <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
                           {formatBytes(doc.size)} ·{" "}
                           {new Date(doc.createdAt).toLocaleDateString("es-MX", {
                             day: "2-digit",
@@ -287,7 +346,7 @@ export default async function ClientDocumentsPage({
                     <div className="flex shrink-0 items-center gap-2">
                       <a
                         href={`/api/documents/${doc.id}/download`}
-                        className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
+                        className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-indigo-500 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-400"
                       >
                         <svg
                           className="h-3 w-3"

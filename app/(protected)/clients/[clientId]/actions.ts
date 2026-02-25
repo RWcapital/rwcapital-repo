@@ -126,3 +126,35 @@ export async function removeMember(clientId: string, userId: string) {
 
   revalidatePath(`/clients/${clientId}`);
 }
+
+export async function createFolder(clientId: string, formData: FormData) {
+  const session = await requireUser();
+  const hasAccess = await canAccessClient(
+    session.user.id,
+    session.user.role,
+    clientId,
+  );
+  if (!hasAccess) return;
+
+  const name = formData.get("name")?.toString().trim();
+  if (!name) return;
+
+  await prisma.clientFolder.upsert({
+    where: { clientId_name: { clientId, name } },
+    create: { clientId, name },
+    update: {},
+  });
+
+  revalidatePath(`/clients/${clientId}`);
+}
+
+export async function deleteFolder(clientId: string, folderName: string) {
+  const session = await requireUser();
+  if (session.user.role !== "ADMIN") return;
+
+  await prisma.clientFolder.deleteMany({
+    where: { clientId, name: folderName },
+  });
+
+  revalidatePath(`/clients/${clientId}`);
+}

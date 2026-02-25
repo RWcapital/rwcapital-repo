@@ -83,6 +83,7 @@ model Client {
 
   documents   Document[]
   memberships ClientMember[]
+  folders     ClientFolder[]
 }
 
 model ClientMember {
@@ -111,4 +112,15 @@ model Document {
 
   client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   uploader User   @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+}
+
+model ClientFolder {
+  id        String   @id @default(cuid())
+  clientId  String
+  name      String
+  createdAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, name])
 }

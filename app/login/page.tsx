@@ -30,7 +30,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f4f5f7]">
+    <div className="flex min-h-screen bg-[#f4f5f7] dark:bg-zinc-950">
       {/* Sidebar branding */}
       <div className="hidden w-1/2 flex-col justify-between bg-[#0f1117] p-12 lg:flex">
         <div className="flex items-center gap-3">
@@ -53,21 +53,21 @@ export default function LoginPage() {
       </div>
 
       {/* Form */}
-      <div className="flex w-full flex-col items-center justify-center px-8 lg:w-1/2">
+      <div className="flex w-full flex-col items-center justify-center px-8 lg:w-1/2 dark:bg-zinc-950">
         <div className="w-full max-w-sm">
           {/* Mobile brand */}
-          <p className="mb-8 text-center text-lg font-bold tracking-tight text-zinc-900 lg:hidden">
+          <p className="mb-8 text-center text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50 lg:hidden">
             RW Capital Holding
           </p>
 
-          <h1 className="text-2xl font-semibold text-zinc-900">Iniciar sesión</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Iniciar sesión</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Ingresa con tu correo corporativo.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-700" htmlFor="email">
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="email">
                 Email
               </label>
               <input
@@ -76,14 +76,14 @@ export default function LoginPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:ring-indigo-800"
                 placeholder="correo@rwcapitalholding.com"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-700" htmlFor="password">
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="password">
                 Contraseña
               </label>
               <input
@@ -92,15 +92,15 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:ring-indigo-800"
                 required
               />
             </div>
 
             {error ? (
-              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 dark:border-red-800 dark:bg-red-900/20">
                 <span className="text-red-500">⚠</span>
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
             ) : null}
 
