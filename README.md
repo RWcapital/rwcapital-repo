@@ -2,6 +2,23 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Configuración inicial
+
+1. Copia las variables de entorno:
+
+```
+cp .env.example .env
+```
+
+2. Configura `DATABASE_URL` y `NEXTAUTH_SECRET` en el archivo `.env`.
+
+3. Aplica el esquema y crea el usuario admin inicial:
+
+```
+npx prisma db push
+npm run db:seed
+```
+
 First, run the development server:
 
 ```bash
