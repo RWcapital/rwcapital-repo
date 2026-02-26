@@ -62,3 +62,18 @@ export async function getPresignedDownloadUrl(
   });
   return getSignedUrl(s3, command, { expiresIn });
 }
+
+/**
+ * Returns a presigned URL valid for 1 hour for inline viewing in the browser.
+ */
+export async function getPresignedViewUrl(
+  key: string,
+  expiresIn = 3600,
+) {
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ResponseContentDisposition: "inline",
+  });
+  return getSignedUrl(s3, command, { expiresIn });
+}
