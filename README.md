@@ -12,6 +12,8 @@ cp .env.example .env
 
 2. Configura `DATABASE_URL` y `NEXTAUTH_SECRET` en el archivo `.env`.
 
+	Límite máximo de subida de documentos: **40 MB**.
+
 3. Aplica el esquema y crea el usuario admin inicial:
 
 ```
