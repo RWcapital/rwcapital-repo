@@ -37,6 +37,23 @@ export async function uploadToS3(
   );
 }
 
+/**
+ * Returns a presigned PUT URL so the browser can upload directly to S3,
+ * bypassing the Vercel serverless function payload limit.
+ */
+export async function getPresignedUploadUrl(
+  key: string,
+  contentType: string,
+  expiresIn = 300,
+) {
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ContentType: contentType,
+  });
+  return getSignedUrl(s3, command, { expiresIn });
+}
+
 export async function deleteFromS3(key: string) {
   await s3.send(
     new DeleteObjectCommand({

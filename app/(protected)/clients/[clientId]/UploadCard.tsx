@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { uploadDocument } from "./actions";
+import { getUploadUrl, registerDocument } from "./actions";
 
 function UploadIcon() {
   return (
@@ -85,12 +85,46 @@ export function UploadCard({
     setError(null);
     startTransition(async () => {
       try {
-        const result = await uploadDocument(clientId, formData);
-        if (!result.ok) {
-          setError(result.error);
-        } else {
-          handleClose();
+        const file = formData.get("file") as File | null;
+        if (!file) {
+          setError("Selecciona un archivo.");
+          return;
         }
+        const folderPath = (formData.get("folderPath") as string | null)?.trim() || null;
+
+        // Paso 1: obtener URL prefirmada del servidor (payload pequeño, sin archivo)
+        const urlResult = await getUploadUrl(clientId, file.name, file.type);
+        if (!urlResult.ok) {
+          setError(urlResult.error);
+          return;
+        }
+
+        // Paso 2: subir el archivo DIRECTO a S3 desde el navegador
+        const uploadRes = await fetch(urlResult.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file,
+        });
+        if (!uploadRes.ok) {
+          setError(`Error al subir a S3 (${uploadRes.status}). Intenta de nuevo.`);
+          return;
+        }
+
+        // Paso 3: registrar en la base de datos
+        const regResult = await registerDocument(
+          clientId,
+          urlResult.storageKey,
+          file.name,
+          file.type,
+          file.size,
+          folderPath,
+        );
+        if (!regResult.ok) {
+          setError(regResult.error);
+          return;
+        }
+
+        handleClose();
       } catch (err) {
         console.error("[UploadCard] error:", err);
         setError("Ocurrió un error al subir el documento. Intenta de nuevo.");

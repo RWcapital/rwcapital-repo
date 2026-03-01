@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { requireUser, canAccessClient } from "@/lib/access";
-import { uploadToS3, deleteFromS3 } from "@/lib/s3";
+import { uploadToS3, deleteFromS3, getPresignedUploadUrl } from "@/lib/s3";
 
 /** Re-lanza errores internos de Next.js (redirect, notFound) para que el framework los maneje correctamente. */
 function rethrowIfNextError(err: unknown): void {
@@ -21,43 +21,59 @@ function rethrowIfNextError(err: unknown): void {
   }
 }
 
-export async function uploadDocument(
+/**
+ * Paso 1: genera una URL prefirmada para que el navegador suba el archivo
+ * directamente a S3, sin pasar por la función de Vercel.
+ */
+export async function getUploadUrl(
   clientId: string,
-  formData: FormData,
+  fileName: string,
+  fileType: string,
+): Promise<{ ok: true; uploadUrl: string; storageKey: string } | { ok: false; error: string }> {
+  try {
+    const session = await requireUser();
+    const hasAccess = await canAccessClient(session.user.id, session.user.role, clientId);
+    if (!hasAccess) return { ok: false, error: "No tienes acceso a este cliente." };
+
+    const extension = path.extname(fileName);
+    const storageKey = `${clientId}/${crypto.randomUUID()}${extension}`;
+    const uploadUrl = await getPresignedUploadUrl(
+      storageKey,
+      fileType || "application/octet-stream",
+    );
+
+    return { ok: true, uploadUrl, storageKey };
+  } catch (err) {
+    rethrowIfNextError(err);
+    console.error("[getUploadUrl] error:", err);
+    return { ok: false, error: "No se pudo generar la URL de subida." };
+  }
+}
+
+/**
+ * Paso 2: registra en la base de datos el archivo ya subido a S3.
+ */
+export async function registerDocument(
+  clientId: string,
+  storageKey: string,
+  originalName: string,
+  mimeType: string,
+  size: number,
+  folderPath: string | null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const session = await requireUser();
-    const hasAccess = await canAccessClient(
-      session.user.id,
-      session.user.role,
-      clientId,
-    );
-
-    if (!hasAccess) {
-      return { ok: false, error: "No tienes acceso a este cliente." };
-    }
-
-    const file = formData.get("file") as File | null;
-    const folderPath = formData.get("folderPath")?.toString().trim() || null;
-
-    if (!file) {
-      return { ok: false, error: "No se recibió ningún archivo." };
-    }
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const extension = path.extname(file.name);
-    const storageKey = `${clientId}/${crypto.randomUUID()}${extension}`;
-
-    await uploadToS3(storageKey, buffer, file.type || "application/octet-stream");
+    const hasAccess = await canAccessClient(session.user.id, session.user.role, clientId);
+    if (!hasAccess) return { ok: false, error: "No tienes acceso a este cliente." };
 
     await prisma.document.create({
       data: {
         clientId,
         uploaderId: session.user.id,
-        originalName: file.name,
+        originalName,
         storageKey,
-        mimeType: file.type || "application/octet-stream",
-        size: buffer.length,
+        mimeType: mimeType || "application/octet-stream",
+        size,
         folderPath: folderPath || null,
       },
     });
@@ -66,10 +82,8 @@ export async function uploadDocument(
     return { ok: true };
   } catch (err) {
     rethrowIfNextError(err);
-    console.error("[uploadDocument] error:", err);
-    const message =
-      err instanceof Error ? err.message : "Error desconocido al subir el archivo.";
-    return { ok: false, error: message };
+    console.error("[registerDocument] error:", err);
+    return { ok: false, error: "No se pudo registrar el documento." };
   }
 }
 
