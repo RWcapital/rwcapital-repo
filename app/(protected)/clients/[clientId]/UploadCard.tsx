@@ -92,20 +92,37 @@ export function UploadCard({
         }
         const folderPath = (formData.get("folderPath") as string | null)?.trim() || null;
 
-        // Paso 1: obtener URL prefirmada del servidor (payload pequeño, sin archivo)
-        const urlResult = await getUploadUrl(clientId, file.name, file.type);
+        // Paso 1: obtener URL prefirmada del servidor
+        let urlResult: Awaited<ReturnType<typeof getUploadUrl>>;
+        try {
+          urlResult = await getUploadUrl(clientId, file.name, file.type);
+        } catch (e) {
+          console.error("[UploadCard] paso 1 - getUploadUrl falló:", e);
+          setError("Error al preparar la subida (paso 1). Intenta de nuevo.");
+          return;
+        }
         if (!urlResult.ok) {
-          setError(urlResult.error);
+          console.error("[UploadCard] paso 1 - getUploadUrl error:", urlResult.error);
+          setError(`Error al preparar la subida: ${urlResult.error}`);
           return;
         }
 
         // Paso 2: subir el archivo DIRECTO a S3 desde el navegador
-        const uploadRes = await fetch(urlResult.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type || "application/octet-stream" },
-          body: file,
-        });
+        let uploadRes: Response;
+        try {
+          uploadRes = await fetch(urlResult.uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type || "application/octet-stream" },
+            body: file,
+          });
+        } catch (e) {
+          console.error("[UploadCard] paso 2 - fetch a S3 falló:", e);
+          setError("Error de red al subir el archivo (paso 2). Puede ser un problema de CORS en el bucket. Intenta de nuevo.");
+          return;
+        }
         if (!uploadRes.ok) {
+          const body = await uploadRes.text().catch(() => "");
+          console.error(`[UploadCard] paso 2 - S3 respondió ${uploadRes.status}:`, body);
           setError(`Error al subir a S3 (${uploadRes.status}). Intenta de nuevo.`);
           return;
         }
