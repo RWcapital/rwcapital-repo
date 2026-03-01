@@ -46,6 +46,7 @@ export function UploadCard({
   const [folder, setFolder] = useState("");
   const [fileName, setFileName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +56,7 @@ export function UploadCard({
     setOpen(false);
     setFolder("");
     setFileName("");
+    setError(null);
     formRef.current?.reset();
   }
 
@@ -80,9 +82,26 @@ export function UploadCard({
   }
 
   function handleSubmit(formData: FormData) {
+    setError(null);
     startTransition(async () => {
-      await uploadDocument(clientId, formData);
-      handleClose();
+      try {
+        await uploadDocument(clientId, formData);
+        handleClose();
+      } catch (err) {
+        // Re-throw Next.js redirect/notFound errors so they are handled by the framework
+        if (
+          err !== null &&
+          typeof err === "object" &&
+          "digest" in err &&
+          typeof (err as { digest: unknown }).digest === "string" &&
+          ((err as { digest: string }).digest.startsWith("NEXT_REDIRECT") ||
+            (err as { digest: string }).digest.startsWith("NEXT_NOT_FOUND"))
+        ) {
+          throw err;
+        }
+        console.error("Upload error:", err);
+        setError("Ocurrió un error al subir el documento. Intenta de nuevo.");
+      }
     });
   }
 
@@ -219,6 +238,13 @@ export function UploadCard({
                   )}
                 </label>
               </div>
+
+              {/* Error message */}
+              {error && (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                  {error}
+                </p>
+              )}
 
               {/* Submit */}
               <button
