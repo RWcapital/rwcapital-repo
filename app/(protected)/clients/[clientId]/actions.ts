@@ -60,109 +60,123 @@ export async function uploadDocument(
 }
 
 export async function deleteDocument(documentId: string) {
-  const session = await requireUser();
-
-  const document = await prisma.document.findUnique({
-    where: { id: documentId },
-  });
-
-  if (!document) return;
-
-  const hasAccess = await canAccessClient(
-    session.user.id,
-    session.user.role,
-    document.clientId,
-  );
-
-  if (!hasAccess) return;
-
-  // Only admin or the uploader can delete
-  if (session.user.role !== "ADMIN" && document.uploaderId !== session.user.id) {
-    return;
-  }
-
   try {
-    await deleteFromS3(document.storageKey);
-  } catch {
-    // Object may already be gone, continue
-  }
+    const session = await requireUser();
 
-  await prisma.document.delete({ where: { id: documentId } });
-  revalidatePath(`/clients/${document.clientId}`);
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+    });
+
+    if (!document) return;
+
+    const hasAccess = await canAccessClient(
+      session.user.id,
+      session.user.role,
+      document.clientId,
+    );
+
+    if (!hasAccess) return;
+
+    // Only admin or the uploader can delete
+    if (session.user.role !== "ADMIN" && document.uploaderId !== session.user.id) {
+      return;
+    }
+
+    try {
+      await deleteFromS3(document.storageKey);
+    } catch {
+      // Object may already be gone, continue
+    }
+
+    await prisma.document.delete({ where: { id: documentId } });
+    revalidatePath(`/clients/${document.clientId}`);
+  } catch (err) {
+    console.error("[deleteDocument] error:", err);
+  }
 }
 
 export async function addMember(clientId: string, formData: FormData) {
-  const session = await requireUser();
-  if (session.user.role !== "ADMIN") {
-    return;
-  }
+  try {
+    const session = await requireUser();
+    if (session.user.role !== "ADMIN") return;
 
-  const email = formData.get("email")?.toString().toLowerCase().trim();
-  if (!email) {
-    return;
-  }
+    const email = formData.get("email")?.toString().toLowerCase().trim();
+    if (!email) return;
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return;
-  }
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return;
 
-  await prisma.clientMember.upsert({
-    where: {
-      clientId_userId: {
+    await prisma.clientMember.upsert({
+      where: {
+        clientId_userId: {
+          clientId,
+          userId: user.id,
+        },
+      },
+      create: {
         clientId,
         userId: user.id,
       },
-    },
-    create: {
-      clientId,
-      userId: user.id,
-    },
-    update: {},
-  });
+      update: {},
+    });
 
-  revalidatePath(`/clients/${clientId}`);
+    revalidatePath(`/clients/${clientId}`);
+  } catch (err) {
+    console.error("[addMember] error:", err);
+  }
 }
 
 export async function removeMember(clientId: string, userId: string) {
-  const session = await requireUser();
-  if (session.user.role !== "ADMIN") return;
+  try {
+    const session = await requireUser();
+    if (session.user.role !== "ADMIN") return;
 
-  await prisma.clientMember.deleteMany({
-    where: { clientId, userId },
-  });
+    await prisma.clientMember.deleteMany({
+      where: { clientId, userId },
+    });
 
-  revalidatePath(`/clients/${clientId}`);
+    revalidatePath(`/clients/${clientId}`);
+  } catch (err) {
+    console.error("[removeMember] error:", err);
+  }
 }
 
 export async function createFolder(clientId: string, formData: FormData) {
-  const session = await requireUser();
-  const hasAccess = await canAccessClient(
-    session.user.id,
-    session.user.role,
-    clientId,
-  );
-  if (!hasAccess) return;
+  try {
+    const session = await requireUser();
+    const hasAccess = await canAccessClient(
+      session.user.id,
+      session.user.role,
+      clientId,
+    );
+    if (!hasAccess) return;
 
-  const name = formData.get("name")?.toString().trim();
-  if (!name) return;
+    const name = formData.get("name")?.toString().trim();
+    if (!name) return;
 
-  await prisma.clientFolder.upsert({
-    where: { clientId_name: { clientId, name } },
-    create: { clientId, name },
-    update: {},
-  });
+    await prisma.clientFolder.upsert({
+      where: { clientId_name: { clientId, name } },
+      create: { clientId, name },
+      update: {},
+    });
 
-  revalidatePath(`/clients/${clientId}`);
+    revalidatePath(`/clients/${clientId}`);
+  } catch (err) {
+    console.error("[createFolder] error:", err);
+  }
 }
 
 export async function deleteFolder(clientId: string, folderName: string) {
-  const session = await requireUser();
-  if (session.user.role !== "ADMIN") return;
+  try {
+    const session = await requireUser();
+    if (session.user.role !== "ADMIN") return;
 
-  await prisma.clientFolder.deleteMany({
-    where: { clientId, name: folderName },
-  });
+    await prisma.clientFolder.deleteMany({
+      where: { clientId, name: folderName },
+    });
 
-  revalidatePath(`/clients/${clientId}`);
+    revalidatePath(`/clients/${clientId}`);
+  } catch (err) {
+    console.error("[deleteFolder] error:", err);
+  }
 }

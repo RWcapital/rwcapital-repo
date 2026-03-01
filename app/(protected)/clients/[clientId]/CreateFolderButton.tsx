@@ -22,6 +22,7 @@ function CloseIcon() {
 export function CreateFolderButton({ clientId }: { clientId: string }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -29,13 +30,20 @@ export function CreateFolderButton({ clientId }: { clientId: string }) {
     if (isPending) return;
     setOpen(false);
     setName("");
+    setError(null);
     formRef.current?.reset();
   }
 
   function handleSubmit(formData: FormData) {
+    setError(null);
     startTransition(async () => {
-      await createFolder(clientId, formData);
-      handleClose();
+      try {
+        await createFolder(clientId, formData);
+        handleClose();
+      } catch (err) {
+        console.error("[CreateFolderButton] error:", err);
+        setError("Ocurrió un error al crear la carpeta. Intenta de nuevo.");
+      }
     });
   }
 
@@ -105,6 +113,12 @@ export function CreateFolderButton({ clientId }: { clientId: string }) {
                   Usa <code className="text-zinc-500">/</code> para subcarpetas
                 </p>
               </div>
+
+              {error && (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"

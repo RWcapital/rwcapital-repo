@@ -84,11 +84,16 @@ export function UploadCard({
   function handleSubmit(formData: FormData) {
     setError(null);
     startTransition(async () => {
-      const result = await uploadDocument(clientId, formData);
-      if (!result.ok) {
-        setError(result.error);
-      } else {
-        handleClose();
+      try {
+        const result = await uploadDocument(clientId, formData);
+        if (!result.ok) {
+          setError(result.error);
+        } else {
+          handleClose();
+        }
+      } catch (err) {
+        console.error("[UploadCard] error:", err);
+        setError("Ocurrió un error al subir el documento. Intenta de nuevo.");
       }
     });
   }
