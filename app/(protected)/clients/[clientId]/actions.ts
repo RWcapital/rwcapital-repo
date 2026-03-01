@@ -11,44 +11,52 @@ import { uploadToS3, deleteFromS3 } from "@/lib/s3";
 export async function uploadDocument(
   clientId: string,
   formData: FormData,
-) {
-  const session = await requireUser();
-  const hasAccess = await canAccessClient(
-    session.user.id,
-    session.user.role,
-    clientId,
-  );
-
-  if (!hasAccess) {
-    return;
-  }
-
-  const file = formData.get("file") as File | null;
-  const folderPath = formData.get("folderPath")?.toString().trim() || null;
-
-  if (!file) {
-    return;
-  }
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const extension = path.extname(file.name);
-  const storageKey = `${clientId}/${crypto.randomUUID()}${extension}`;
-
-  await uploadToS3(storageKey, buffer, file.type || "application/octet-stream");
-
-  await prisma.document.create({
-    data: {
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requireUser();
+    const hasAccess = await canAccessClient(
+      session.user.id,
+      session.user.role,
       clientId,
-      uploaderId: session.user.id,
-      originalName: file.name,
-      storageKey,
-      mimeType: file.type || "application/octet-stream",
-      size: buffer.length,
-      folderPath: folderPath || null,
-    },
-  });
+    );
 
-  revalidatePath(`/clients/${clientId}`);
+    if (!hasAccess) {
+      return { ok: false, error: "No tienes acceso a este cliente." };
+    }
+
+    const file = formData.get("file") as File | null;
+    const folderPath = formData.get("folderPath")?.toString().trim() || null;
+
+    if (!file) {
+      return { ok: false, error: "No se recibió ningún archivo." };
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const extension = path.extname(file.name);
+    const storageKey = `${clientId}/${crypto.randomUUID()}${extension}`;
+
+    await uploadToS3(storageKey, buffer, file.type || "application/octet-stream");
+
+    await prisma.document.create({
+      data: {
+        clientId,
+        uploaderId: session.user.id,
+        originalName: file.name,
+        storageKey,
+        mimeType: file.type || "application/octet-stream",
+        size: buffer.length,
+        folderPath: folderPath || null,
+      },
+    });
+
+    revalidatePath(`/clients/${clientId}`);
+    return { ok: true };
+  } catch (err) {
+    console.error("[uploadDocument] error:", err);
+    const message =
+      err instanceof Error ? err.message : "Error desconocido al subir el archivo.";
+    return { ok: false, error: message };
+  }
 }
 
 export async function deleteDocument(documentId: string) {

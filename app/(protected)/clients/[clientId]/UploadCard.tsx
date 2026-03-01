@@ -84,23 +84,11 @@ export function UploadCard({
   function handleSubmit(formData: FormData) {
     setError(null);
     startTransition(async () => {
-      try {
-        await uploadDocument(clientId, formData);
+      const result = await uploadDocument(clientId, formData);
+      if (!result.ok) {
+        setError(result.error);
+      } else {
         handleClose();
-      } catch (err) {
-        // Re-throw Next.js redirect/notFound errors so they are handled by the framework
-        if (
-          err !== null &&
-          typeof err === "object" &&
-          "digest" in err &&
-          typeof (err as { digest: unknown }).digest === "string" &&
-          ((err as { digest: string }).digest.startsWith("NEXT_REDIRECT") ||
-            (err as { digest: string }).digest.startsWith("NEXT_NOT_FOUND"))
-        ) {
-          throw err;
-        }
-        console.error("Upload error:", err);
-        setError("Ocurrió un error al subir el documento. Intenta de nuevo.");
       }
     });
   }
