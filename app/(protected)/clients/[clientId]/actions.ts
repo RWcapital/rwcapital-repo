@@ -8,6 +8,19 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, canAccessClient } from "@/lib/access";
 import { uploadToS3, deleteFromS3 } from "@/lib/s3";
 
+/** Re-lanza errores internos de Next.js (redirect, notFound) para que el framework los maneje correctamente. */
+function rethrowIfNextError(err: unknown): void {
+  if (
+    err !== null &&
+    typeof err === "object" &&
+    "digest" in err &&
+    typeof (err as { digest: unknown }).digest === "string" &&
+    (err as { digest: string }).digest.startsWith("NEXT_")
+  ) {
+    throw err;
+  }
+}
+
 export async function uploadDocument(
   clientId: string,
   formData: FormData,
@@ -52,6 +65,7 @@ export async function uploadDocument(
     revalidatePath(`/clients/${clientId}`);
     return { ok: true };
   } catch (err) {
+    rethrowIfNextError(err);
     console.error("[uploadDocument] error:", err);
     const message =
       err instanceof Error ? err.message : "Error desconocido al subir el archivo.";
@@ -91,6 +105,7 @@ export async function deleteDocument(documentId: string) {
     await prisma.document.delete({ where: { id: documentId } });
     revalidatePath(`/clients/${document.clientId}`);
   } catch (err) {
+    rethrowIfNextError(err);
     console.error("[deleteDocument] error:", err);
   }
 }
@@ -122,6 +137,7 @@ export async function addMember(clientId: string, formData: FormData) {
 
     revalidatePath(`/clients/${clientId}`);
   } catch (err) {
+    rethrowIfNextError(err);
     console.error("[addMember] error:", err);
   }
 }
@@ -137,6 +153,7 @@ export async function removeMember(clientId: string, userId: string) {
 
     revalidatePath(`/clients/${clientId}`);
   } catch (err) {
+    rethrowIfNextError(err);
     console.error("[removeMember] error:", err);
   }
 }
@@ -162,6 +179,7 @@ export async function createFolder(clientId: string, formData: FormData) {
 
     revalidatePath(`/clients/${clientId}`);
   } catch (err) {
+    rethrowIfNextError(err);
     console.error("[createFolder] error:", err);
   }
 }
@@ -177,6 +195,7 @@ export async function deleteFolder(clientId: string, folderName: string) {
 
     revalidatePath(`/clients/${clientId}`);
   } catch (err) {
+    rethrowIfNextError(err);
     console.error("[deleteFolder] error:", err);
   }
 }
